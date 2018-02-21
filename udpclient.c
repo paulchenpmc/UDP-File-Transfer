@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 using namespace std;
 #define PORT 8001
 int main(int argc, char *argv[]) {
@@ -38,29 +39,28 @@ int main(int argc, char *argv[]) {
 	printf("client socket created\n");
 
 	// Open file to send
-	// printf(argv[1]);
 	ifstream infile(argv[1]);
 	vector <char> datavec;
-	char tmp;
-	while (!infile.eof()) {
-		infile >> tmp;
-		datavec.push_back(tmp);
+	string line;
+	while (getline(infile, line)) {
+		for (char &c : line)
+			datavec.push_back(c);
+		datavec.push_back('\n');
 	}
-	for (int i = 0; i < datavec.size(); i++)
-		cout << datavec[i];
+	cout << "File read into memory\n";
 
 	// test data that will be sent to the server
 	const char* data_to_send = "Hi Server!!!";
 
 	// send data loop
-	for (int i=0; i<3; i++) {
-		int len = sendto(sock, data_to_send, strlen(data_to_send), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+	for (int i=0; i<1; i++) {
+		int len = sendto(sock, &(datavec[0]), datavec.size(), 0, (struct sockaddr*)&server_address, sizeof(server_address));
 		printf("message has been sent to server\n");
 
 		// received echoed data back
-		char buffer[100];
+		char buffer[8888];
 		int recv_bytes=recvfrom(sock, buffer, len, 0, NULL, NULL);
-		printf("received bytes = %d\n",recv_bytes);
+		printf("Server received bytes = %d\n",recv_bytes);
 		buffer[len] = '\0';
 		printf("recieved: '%s'\n", buffer);
 	}
