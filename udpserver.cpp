@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
 	}
 	string m(initialmessage);
 	string filename(m.substr(0, m.find(" ")));
+	filename = string("server_") + filename;
 	int filesize = atoi(m.substr(m.find(" "), m.size()-m.find(" ")).c_str());
 	cout << "Filename: " << filename << "\nFilesize: " << filesize << endl;
 
@@ -107,7 +108,7 @@ int main(int argc, char *argv[]) {
 			int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
 			      client_address_len);
 			printf("server sent back message:%d\n",sent_len);
-			printf("currently in octoblock buffer:\n%s\n", octoblock);
+			// printf("currently in octoblock buffer:\n%s\n", octoblock);
 		} // End of octoleg loop
 
 		// Save completed octoblock into vector
@@ -120,11 +121,11 @@ int main(int argc, char *argv[]) {
 	// 	cout << c;
 
 	// Write to file
-	ofstream outfile("serverfile.txt");
+	ofstream outfile(filename);
 	for (char&c : datavec)
 		outfile << c;
 	outfile.close();
-	cout << "Transfer complete, data written to file!" << endl;
+	cout << "\nTransfer complete, data written to file!" << endl;
 
 	close(sock);
 	return 0;

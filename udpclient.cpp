@@ -11,6 +11,14 @@
 #include <sstream>
 using namespace std;
 #define PORT 8001
+
+bool arrayAllTrue(bool arr[], int n) {
+	for (int i = 0; i<n; i++)
+		if (arr[i] == false)
+			return false;
+	return true;
+}
+
 int main(int argc, char *argv[]) {
 	// Check command line arguments
 	if (argc != 2) {
@@ -68,6 +76,7 @@ int main(int argc, char *argv[]) {
 	int cursor = 0;
 	int octoblocks = datavec.size() / 8888 + 1;
 	while (cursor < datavec.size()) {
+		bool octolegACK[8] = {false,false,false,false,false,false,false,false};
 		int octolegsize = 1109;
 		if (cursor + 8888 > datavec.size())
 			octolegsize = (datavec.size() - cursor) / 8;
