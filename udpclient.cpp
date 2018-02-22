@@ -12,11 +12,11 @@
 using namespace std;
 #define PORT 8001
 
-bool arrayAllTrue(bool arr[], int n) {
+int arrayAllTrue(bool arr[], int n) {
 	for (int i = 0; i<n; i++)
 		if (arr[i] == false)
-			return false;
-	return true;
+			return i;
+	return -1;
 }
 
 int main(int argc, char *argv[]) {
@@ -73,20 +73,21 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Big octoblock sending loop
-	int cursor = 0;
+	int octoblockcursor = 0;
 	int octoblocks = datavec.size() / 8888 + 1;
-	while (cursor < datavec.size()) {
+	while (octoblockcursor < datavec.size()) {
 		bool octolegACK[8] = {false,false,false,false,false,false,false,false};
 		int octolegsize = 1109;
-		if (cursor + 8888 > datavec.size())
-			octolegsize = (datavec.size() - cursor) / 8;
-		cout << "Cursor at: " << cursor << endl;
+		if (octoblockcursor + 8888 > datavec.size())
+			octolegsize = (datavec.size() - octoblockcursor) / 8;
+		// cout << "Cursor at: " << cursor << endl;
 		cout << "\n\nNew Octoblock with Octoleg size: " << octolegsize << endl;
 
 		// Octoleg sending loop
 		char sendbuffer[octolegsize + 2];
 		memset(sendbuffer, 0, octolegsize+2);
-		for (int j = 0; j < 8; j++) {
+		for (int j = 0; j < 8; ) {
+			int cursor = octoblockcursor + octolegsize*j;
 			sendbuffer[0] = j; // Left shift operator to indicate octoleg
 			strncpy(sendbuffer+1, &(datavec[cursor]), octolegsize);
 			cout << "\nSending: '" << sendbuffer+1 << "'" << endl;
@@ -95,15 +96,23 @@ int main(int argc, char *argv[]) {
 			int len = sendto(sock, sendbuffer, octolegsize + 1, 0, (struct sockaddr*)&server_address, sizeof(server_address));
 			printf("message has been sent to server\n");
 
-			// received echoed data back
-			char buffer[1111];
-			memset(buffer, 0, 1111);
-			int recv_bytes=recvfrom(sock, buffer, len, 0, NULL, NULL);
-			printf("Server received bytes = %d\n",recv_bytes);
-			buffer[len] = '\0';
-			printf("Server recieved: '%s'\n", buffer);
-			cursor += octolegsize;
+			// Receive ACK back from server
+			char ACK[2];
+			int recv_bytes=recvfrom(sock, ACK, 1, 0, NULL, NULL);
+			ACK[1] = '\0';
+			printf("Server recieved octoleg: '%d'\n", ACK[0]);
+			octolegACK[ACK[0]] = true;
+
+			// Check to make sure all octolegs were ACK'd by server
+			if (arrayAllTrue(octolegACK, 8) != -1) {
+				j = arrayAllTrue(octolegACK, 8);
+			} else {
+				j = 8;
+			}
+
+			// cursor += octolegsize;
 		} // End of octoleg sending loop
+		octoblockcursor += 8*octolegsize;
 	} // End of octoblock sending loop
 
 	// Signal end of octoblocks

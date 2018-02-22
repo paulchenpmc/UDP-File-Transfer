@@ -104,10 +104,16 @@ int main(int argc, char *argv[]) {
 			printf("\nreceived: '%s' from client %s on port %d\n", buffer,
 			       inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
 
-			// send same content back to the client ("echo")
-			int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
+			// Send ACK back to client
+			char ACK[1] = {(char)octoleg_id};
+			int sent_len = sendto(sock, ACK, 1, 0, (struct sockaddr *)&client_address,
 			      client_address_len);
-			printf("server sent back message:%d\n",sent_len);
+			printf("server sent back ACK: %d\n",ACK[0]);
+
+			// send same content back to the client ("echo")
+			// int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
+			//       client_address_len);
+			// printf("server sent back message:%d\n",sent_len);
 			// printf("currently in octoblock buffer:\n%s\n", octoblock);
 		} // End of octoleg loop
 
