@@ -5,6 +5,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <vector>
+#include <iostream>
+using namespace std;
 #define PORT 8001
 int main(int argc, char *argv[]) {
 	// port to start the server on
@@ -40,16 +43,21 @@ int main(int argc, char *argv[]) {
 	// socket address used to store client address
 	struct sockaddr_in client_address;
 	int client_address_len = sizeof(client_address);
-        char client_name[100];
+  char client_name[100];
 
-	// run indefinitely
+	//////////////////////////////////////////////////////////////////////////////
+
+	vector <char> datavec;
+	// Big receive loop
+	int count = 0;
 	while (true) {
-		char buffer[8888];
+		if (count > 7) break; // DELETE LATER
+		char octoblock[8888];
+		int octoblocksize;
 
+		char buffer[1111];
 		// read content into buffer from an incoming client
-		int len = recvfrom(sock, buffer, sizeof(buffer), 0,
-		                   (struct sockaddr *)&client_address,
-		                   &client_address_len);
+		int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_address, &client_address_len);
 		if (len < 0) {
 			printf("Read error!\n");
 	    return -1;
@@ -65,8 +73,18 @@ int main(int argc, char *argv[]) {
 		int sent_len = sendto(sock, buffer, len, 0, (struct sockaddr *)&client_address,
 		      client_address_len);
 		printf("server sent back message:%d\n",sent_len);
+		count++;
 
+		// Save completed octoblock into vector
+		datavec.insert(datavec.end(), buffer, buffer+len);
 	}
+	// End of receive loop
+
+	// Full message from client
+	cout << "Client file:\n";
+	for (char&c : datavec)
+		cout << c;
+
 	close(sock);
 	return 0;
 }

@@ -50,21 +50,32 @@ int main(int argc, char *argv[]) {
 	cout << "File read into memory\n";
 
 	// test data that will be sent to the server
-	const char* data_to_send = "Hi Server!!!";
+	// const char* data_to_send = "Hi Server!!!";
 
-	// send data loop
-	for (int i=0; i<1; i++) {
-		int len = sendto(sock, &(datavec[0]), datavec.size(), 0, (struct sockaddr*)&server_address, sizeof(server_address));
-		printf("message has been sent to server\n");
+	//////////////////////////////////////////////////////////////////////////////
 
-		// received echoed data back
-		char buffer[8888];
-		int recv_bytes=recvfrom(sock, buffer, len, 0, NULL, NULL);
-		printf("Server received bytes = %d\n",recv_bytes);
-		buffer[len] = '\0';
-		printf("recieved: '%s'\n", buffer);
-	}
-	// End of sending loop
+	// Big octoblock sending loop
+	int cursor = 0;
+	int octoblocks = datavec.size() / 8888 + 1;
+	while (cursor < datavec.size()) {
+		int octolegsize = 1111;
+		if (cursor + 8888 > datavec.size())
+			octolegsize = (datavec.size() - cursor) / 8;
+		cout << "octolegsize: " << octolegsize << endl;
+		// Octoleg sending loop
+		for (int j = 0; j < 8; j++) {
+			int len = sendto(sock, &(datavec[cursor]), octolegsize, 0, (struct sockaddr*)&server_address, sizeof(server_address));
+			printf("message has been sent to server\n");
+
+			// received echoed data back
+			char buffer[1111];
+			int recv_bytes=recvfrom(sock, buffer, len, 0, NULL, NULL);
+			printf("Server received bytes = %d\n",recv_bytes);
+			buffer[len] = '\0';
+			printf("Server recieved: '%s'\n", buffer);
+			cursor += octolegsize;
+		} // End of octoleg sending loop
+	} // End of octoblock sending loop
 
 	// close the socket and input file
 	close(sock);
