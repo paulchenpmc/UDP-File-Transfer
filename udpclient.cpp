@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 		// Octoleg sending loop
 		char sendbuffer[octolegsize + 2];
 		memset(sendbuffer, 0, octolegsize+2);
-		for (int j = 0; j < 8; ) {
+		for (int j = 4; j < 8; ) {
 			int cursor = octoblockcursor + octolegsize*j;
 			sendbuffer[0] = j; // Left shift operator to indicate octoleg
 			strncpy(sendbuffer+1, &(datavec[cursor]), octolegsize);

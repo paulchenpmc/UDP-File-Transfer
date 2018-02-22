@@ -76,7 +76,9 @@ int main(int argc, char *argv[]) {
 		memset(octoblock, 0, 8888);
 		bool octolegACK[8] = {false,false,false,false,false,false,false,false};
 		char buffer[1111];
-		int octolegsize;
+		int octolegsize = 1109;
+		if ((i+1)*1109*8 > filesize)
+			octolegsize = (filesize - i*1109*8) / 8;
 		int bytesreceived = 0;
 
 		// While not all octolegs received
@@ -92,31 +94,26 @@ int main(int argc, char *argv[]) {
 			// Decode octoleg metadata
 			// cout << "first char received: " << (int)buffer[0] << endl;
 			int octoleg_id = buffer[0];
-			if (octoleg_id == 0) octolegsize = len-1;
+			// if (octoleg_id == 0) octolegsize = len-1;
 			octolegACK[octoleg_id] = true;
 			bytesreceived += len-1;
-			// cout << "octolegsize: " << octolegsize << endl;
-			strncpy(octoblock+(octolegsize*octoleg_id), buffer+1, len);
+			cout << "octolegsize*octoleg_id: " << octolegsize*octoleg_id << endl;
+			strncpy(octoblock+(octolegsize*octoleg_id), buffer+1, len-1);
 
 			// inet_ntoa prints user friendly representation of the
 			// ip address
 			buffer[len] = '\0';
-			printf("\nreceived: '%s' from client %s on port %d\n", buffer,
+			printf("received: '%s' (%d bytes)from client %s on port %d\n", buffer+1,len,
 			       inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
 
 			// Send ACK back to client
 			char ACK[1] = {(char)octoleg_id};
 			int sent_len = sendto(sock, ACK, 1, 0, (struct sockaddr *)&client_address,
 			      client_address_len);
-			printf("server sent back ACK: %d\n",ACK[0]);
-
-			// send same content back to the client ("echo")
-			// int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
-			//       client_address_len);
-			// printf("server sent back message:%d\n",sent_len);
-			// printf("currently in octoblock buffer:\n%s\n", octoblock);
+			printf("server sent back ACK: %d\n\n",ACK[0]);
 		} // End of octoleg loop
 
+		cout << "Completed Octoblock:\n" << octoblock << endl;
 		// Save completed octoblock into vector
 		datavec.insert(datavec.end(), octoblock, octoblock+bytesreceived);
 	} // End of octoblock loop
