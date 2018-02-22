@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 	// Big receive loop
 	int count = 0;
 	while (true) {
-		if (count > 15) break; // DELETE LATER
+		// if (count > 15) break; // DELETE LATER
 		char octoblock[8888];
 		int octoblocksize;
 
@@ -64,6 +64,9 @@ int main(int argc, char *argv[]) {
 			printf("Read error!\n");
 	    return -1;
 		}
+
+		cout << "first char received: " << (int)buffer[0] << endl;
+		if (buffer[0] == 0x11) break;
 
 		// inet_ntoa prints user friendly representation of the
 		// ip address

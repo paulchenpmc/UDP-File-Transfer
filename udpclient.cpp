@@ -86,6 +86,12 @@ int main(int argc, char *argv[]) {
 		} // End of octoleg sending loop
 	} // End of octoblock sending loop
 
+	// Signal end of octoblocks
+	char endsignal[1];
+	endsignal[0] = 0x11;
+	sendto(sock, endsignal, sizeof(endsignal), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+	cout << "All octoblocks of file sent, signalling end to server" << endl;
+
 	// close the socket and input file
 	close(sock);
 	infile.close();
