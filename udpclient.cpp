@@ -8,6 +8,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <sstream>
 using namespace std;
 #define PORT 8001
 int main(int argc, char *argv[]) {
@@ -54,6 +55,15 @@ int main(int argc, char *argv[]) {
 
 	//////////////////////////////////////////////////////////////////////////////
 
+	// Send initial data to server: filename, filesize
+	ostringstream oss;
+	oss << argv[1] << " " << datavec.size();
+	int leng = sendto(sock, oss.str().c_str(), oss.str().size(), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+	if (leng < 0) {
+		printf("Send error!\n");
+		return -1;
+	}
+
 	// Big octoblock sending loop
 	int cursor = 0;
 	int octoblocks = datavec.size() / 8888 + 1;
@@ -63,11 +73,12 @@ int main(int argc, char *argv[]) {
 			octolegsize = (datavec.size() - cursor) / 8;
 		cout << "Cursor at: " << cursor << endl;
 		cout << "\n\nNew Octoblock with Octoleg size: " << octolegsize << endl;
+
 		// Octoleg sending loop
 		char sendbuffer[octolegsize + 2];
 		memset(sendbuffer, 0, octolegsize+2);
 		for (int j = 0; j < 8; j++) {
-			sendbuffer[0] = (1 << j); // Left shift operator to indicate octoleg
+			sendbuffer[0] = j; // Left shift operator to indicate octoleg
 			strncpy(sendbuffer+1, &(datavec[cursor]), octolegsize);
 			cout << "\nSending: '" << sendbuffer+1 << "'" << endl;
 
@@ -87,10 +98,10 @@ int main(int argc, char *argv[]) {
 	} // End of octoblock sending loop
 
 	// Signal end of octoblocks
-	char endsignal[1];
-	endsignal[0] = 0x11;
-	sendto(sock, endsignal, sizeof(endsignal), 0, (struct sockaddr*)&server_address, sizeof(server_address));
-	cout << "All octoblocks of file sent, signalling end to server" << endl;
+	// char endsignal[1];
+	// endsignal[0] = 0x11;
+	// sendto(sock, endsignal, sizeof(endsignal), 0, (struct sockaddr*)&server_address, sizeof(server_address));
+	// cout << "All octoblocks of file sent, signalling end to server" << endl;
 
 	// close the socket and input file
 	close(sock);

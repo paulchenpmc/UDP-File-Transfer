@@ -10,6 +10,14 @@
 #include <fstream>
 using namespace std;
 #define PORT 8001
+
+bool arrayAllTrue(bool arr[], int n) {
+	for (int i = 0; i<n; i++)
+		if (arr[i] == false)
+			return false;
+	return true;
+}
+
 int main(int argc, char *argv[]) {
 	// port to start the server on
 	int SERVER_PORT = PORT;
@@ -48,42 +56,63 @@ int main(int argc, char *argv[]) {
 
 	//////////////////////////////////////////////////////////////////////////////
 
+	// Receive initial data from client: filename, filesize
+	char initialmessage[1028];
+	int leng = recvfrom(sock, initialmessage, sizeof(initialmessage), 0, (struct sockaddr *)&client_address, &client_address_len);
+	if (leng < 0) {
+		printf("Read error!\n");
+		return -1;
+	}
+	string m(initialmessage);
+	string filename(m.substr(0, m.find(" ")));
+	int filesize = atoi(m.substr(m.find(" "), m.size()-m.find(" ")).c_str());
+	cout << "Filename: " << filename << "\nFilesize: " << filesize << endl;
+
 	vector <char> datavec;
 	// Big receive loop
-	int count = 0;
-	while (true) {
-		// if (count > 15) break; // DELETE LATER
+	for (int i = 0; i < filesize/8888+1; i++) {
 		char octoblock[8888];
-		int octoblocksize;
-
+		memset(octoblock, 0, 8888);
+		bool octolegACK[8] = {false,false,false,false,false,false,false,false};
 		char buffer[1111];
-		memset(buffer, 0, 1111);
-		// read content into buffer from an incoming client
-		int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_address, &client_address_len);
-		if (len < 0) {
-			printf("Read error!\n");
-	    return -1;
-		}
+		int octolegsize;
+		int bytesreceived = 0;
 
-		cout << "first char received: " << (int)buffer[0] << endl;
-		if (buffer[0] == 0x11) break;
+		// While not all octolegs received
+		while (!arrayAllTrue(octolegACK, 8)) {
+			memset(buffer, 0, 1111);
+			// read content into buffer from an incoming client
+			int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_address, &client_address_len);
+			if (len < 0) {
+				printf("Read error!\n");
+		    return -1;
+			}
 
-		// inet_ntoa prints user friendly representation of the
-		// ip address
-		buffer[len] = '\0';
-		printf("received: '%s' from client %s on port %d\n", buffer,
-		       inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+			// Decode octoleg metadata
+			// cout << "first char received: " << (int)buffer[0] << endl;
+			int octoleg_id = buffer[0];
+			if (octoleg_id == 0) octolegsize = len-1;
+			octolegACK[octoleg_id] = true;
+			bytesreceived += len-1;
+			// cout << "octolegsize: " << octolegsize << endl;
+			strncpy(octoblock+(octolegsize*octoleg_id), buffer+1, len);
 
-		// send same content back to the client ("echo")
-		int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
-		      client_address_len);
-		printf("server sent back message:%d\n",sent_len);
-		count++;
+			// inet_ntoa prints user friendly representation of the
+			// ip address
+			buffer[len] = '\0';
+			printf("\nreceived: '%s' from client %s on port %d\n", buffer,
+			       inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+
+			// send same content back to the client ("echo")
+			int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
+			      client_address_len);
+			printf("server sent back message:%d\n",sent_len);
+			printf("currently in octoblock buffer:\n%s\n", octoblock);
+		} // End of octoleg loop
 
 		// Save completed octoblock into vector
-		datavec.insert(datavec.end(), buffer+1, buffer+len);
-	}
-	// End of receive loop
+		datavec.insert(datavec.end(), octoblock, octoblock+bytesreceived);
+	} // End of octoblock loop
 
 	// Full message from client debugging
 	// cout << "Client file:\n";
