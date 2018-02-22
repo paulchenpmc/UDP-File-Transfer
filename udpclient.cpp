@@ -58,17 +58,26 @@ int main(int argc, char *argv[]) {
 	int cursor = 0;
 	int octoblocks = datavec.size() / 8888 + 1;
 	while (cursor < datavec.size()) {
-		int octolegsize = 1111;
+		int octolegsize = 1109;
 		if (cursor + 8888 > datavec.size())
 			octolegsize = (datavec.size() - cursor) / 8;
-		cout << "octolegsize: " << octolegsize << endl;
+		cout << "Cursor at: " << cursor << endl;
+		cout << "\n\nNew Octoblock with Octoleg size: " << octolegsize << endl;
 		// Octoleg sending loop
+		char sendbuffer[octolegsize + 2];
+		memset(sendbuffer, 0, octolegsize+2);
 		for (int j = 0; j < 8; j++) {
-			int len = sendto(sock, &(datavec[cursor]), octolegsize, 0, (struct sockaddr*)&server_address, sizeof(server_address));
+			sendbuffer[0] = (1 << j); // Left shift operator to indicate octoleg
+			strncpy(sendbuffer+1, &(datavec[cursor]), octolegsize);
+			cout << "\nSending: '" << sendbuffer+1 << "'" << endl;
+
+			// Send data to server
+			int len = sendto(sock, sendbuffer, octolegsize + 1, 0, (struct sockaddr*)&server_address, sizeof(server_address));
 			printf("message has been sent to server\n");
 
 			// received echoed data back
 			char buffer[1111];
+			memset(buffer, 0, 1111);
 			int recv_bytes=recvfrom(sock, buffer, len, 0, NULL, NULL);
 			printf("Server received bytes = %d\n",recv_bytes);
 			buffer[len] = '\0';

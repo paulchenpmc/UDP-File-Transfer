@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <vector>
 #include <iostream>
+#include <fstream>
 using namespace std;
 #define PORT 8001
 int main(int argc, char *argv[]) {
@@ -51,11 +52,12 @@ int main(int argc, char *argv[]) {
 	// Big receive loop
 	int count = 0;
 	while (true) {
-		if (count > 7) break; // DELETE LATER
+		if (count > 15) break; // DELETE LATER
 		char octoblock[8888];
 		int octoblocksize;
 
 		char buffer[1111];
+		memset(buffer, 0, 1111);
 		// read content into buffer from an incoming client
 		int len = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&client_address, &client_address_len);
 		if (len < 0) {
@@ -70,20 +72,27 @@ int main(int argc, char *argv[]) {
 		       inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
 
 		// send same content back to the client ("echo")
-		int sent_len = sendto(sock, buffer, len, 0, (struct sockaddr *)&client_address,
+		int sent_len = sendto(sock, buffer+1, len-1, 0, (struct sockaddr *)&client_address,
 		      client_address_len);
 		printf("server sent back message:%d\n",sent_len);
 		count++;
 
 		// Save completed octoblock into vector
-		datavec.insert(datavec.end(), buffer, buffer+len);
+		datavec.insert(datavec.end(), buffer+1, buffer+len);
 	}
 	// End of receive loop
 
-	// Full message from client
-	cout << "Client file:\n";
+	// Full message from client debugging
+	// cout << "Client file:\n";
+	// for (char&c : datavec)
+	// 	cout << c;
+
+	// Write to file
+	ofstream outfile("serverfile.txt");
 	for (char&c : datavec)
-		cout << c;
+		outfile << c;
+	outfile.close();
+	cout << "Transfer complete, data written to file!" << endl;
 
 	close(sock);
 	return 0;
