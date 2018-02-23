@@ -74,21 +74,34 @@ int main(int argc, char *argv[]) {
 
 	// Big octoblock sending loop
 	int octoblockcursor = 0;
-	int octoblocks = datavec.size() / 8888 + 1;
+	int octoblocks = datavec.size() / 8872 + 1;
 	while (octoblockcursor < datavec.size()) {
 		bool octolegACK[8] = {false,false,false,false,false,false,false,false};
 		int octolegsize = 1109;
-		if (octoblockcursor + 8888 > datavec.size())
+		if (octoblockcursor + 8872 > datavec.size()) {
 			octolegsize = (datavec.size() - octoblockcursor) / 8;
+			if ((datavec.size() - octoblockcursor) % 8 != 0)
+				octolegsize++;
+		}
 		// cout << "Cursor at: " << cursor << endl;
 		cout << "\n\nNew Octoblock with Octoleg size: " << octolegsize << endl;
 
 		// Octoleg sending loop
 		char sendbuffer[octolegsize + 2];
 		memset(sendbuffer, 0, octolegsize+2);
-		for (int j = 4; j < 8; ) {
+		for (int j = 0; j < 8; ) {
+			if (j != 7 && (rand() % 10 + 1) <= 5) {
+				cout << "\nOh no! Packet " << j << " has been lost!" << endl;
+				j++;
+				if (arrayAllTrue(octolegACK, 8) != -1) {
+					j = arrayAllTrue(octolegACK, 8);
+				} else {
+					j = 8;
+				}
+				continue; // Random packet loss simulation
+			}
 			int cursor = octoblockcursor + octolegsize*j;
-			sendbuffer[0] = j; // Left shift operator to indicate octoleg
+			sendbuffer[0] = j;
 			strncpy(sendbuffer+1, &(datavec[cursor]), octolegsize);
 			cout << "\nSending: '" << sendbuffer+1 << "'" << endl;
 
@@ -109,17 +122,9 @@ int main(int argc, char *argv[]) {
 			} else {
 				j = 8;
 			}
-
-			// cursor += octolegsize;
 		} // End of octoleg sending loop
 		octoblockcursor += 8*octolegsize;
 	} // End of octoblock sending loop
-
-	// Signal end of octoblocks
-	// char endsignal[1];
-	// endsignal[0] = 0x11;
-	// sendto(sock, endsignal, sizeof(endsignal), 0, (struct sockaddr*)&server_address, sizeof(server_address));
-	// cout << "All octoblocks of file sent, signalling end to server" << endl;
 
 	// close the socket and input file
 	close(sock);
